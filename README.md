@@ -4,10 +4,10 @@ Playable development preview of Cube Genius, built with Unity.
 
 Play at https://worthingtonjg.github.io/CubeGeniusPlay/.
 
-Shuffle the cube, enter Tutorial Mode, and click the first move card or its play icon to perform the next move. The series plan explains the target, setup and expected result. You can also drag faces and use Undo.
+Shuffle the cube and enter Tutorial Mode. Orientation steps before the first and after the last puzzle-layer turn in each series run automatically. Orientation between puzzle turns stays manual: use the current move card's Play control or drag the cube. All rotations remain undoable and are excluded from the puzzle move total.
 
-This preview contains compiled runtime files and game assets. Puzzle progress is saved locally in your browser. Development updates are published on demand; routine testing happens locally.
+The preview includes case-specific cross explanations, visible middle-edge alignment and mirrored insertion, always-open scrollable explanations, stage and layer guidance, selection highlighting, and completion feedback. A wrong move can be undone or kept while exiting Tutorial. Returning from a hidden tab requires Resume.
+
+This repository contains only compiled runtime files, game assets and notices. Puzzle progress is saved locally in your browser. Updates are published on demand.
 
 Copyright 2026 Jonathan Worthington. All rights reserved. Third-party notices are retained separately.
-
-Latest preview: numbered move descriptions, bold goals, last-layer teaching, coordinated selection pulses, completion bounce, and explicit-resume focus pause. The puzzle is covered when the tab/window loses focus.
