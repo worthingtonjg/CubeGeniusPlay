@@ -6,7 +6,16 @@
     <title>Unity Web Player | Cube Genius</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
-  </head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><style>html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#17263e}
+#unity-container{position:fixed!important;inset:0!important;width:100%!important;height:100%!important;transform:none!important;box-sizing:border-box;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+#unity-canvas{position:absolute;display:block;transform:none;touch-action:none}
+#unity-footer{position:absolute;height:38px;overflow:hidden}
+#cube-genius-rotate{position:fixed;inset:0;z-index:2147483647;display:flex;flex-direction:column;align-items:center;justify-content:center;box-sizing:border-box;padding:32px;background:#304667;color:white;text-align:center;font-family:system-ui,sans-serif;touch-action:none}
+#cube-genius-rotate[hidden]{display:none!important}
+#cube-genius-rotate h1{font-size:clamp(24px,7vw,34px);line-height:1.2;margin:18px 0 12px;max-width:320px}
+#cube-genius-rotate p{font-size:17px;line-height:1.5;margin:0;max-width:300px;color:#e4edfa}
+#cube-genius-rotate .rotate-symbol{font-size:74px;line-height:1}
+</style></head>
   <body>
     <div id="unity-container" class="unity-desktop">
       <canvas id="unity-canvas" width=960 height=600 tabindex="-1"></canvas>
@@ -54,6 +63,7 @@
       var buildUrl = "Build";
       var loaderUrl = buildUrl + "/Pages.loader.js";
       var config = {
+        matchWebGLToCanvasSize: false,
         arguments: [],
         dataUrl: buildUrl + "/Pages.data",
         frameworkUrl: buildUrl + "/Pages.framework.js",
@@ -90,9 +100,9 @@
       if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
         // Mobile device style: fill the whole browser client area with the game canvas:
 
-        var meta = document.createElement('meta');
+        var meta = document.querySelector('meta[name=viewport]') || document.createElement('meta');
         meta.name = 'viewport';
-        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
+        meta.content = 'width=device-width, initial-scale=1.0, viewport-fit=cover';
         document.getElementsByTagName('head')[0].appendChild(meta);
         document.querySelector("#unity-container").className = "unity-mobile";
         canvas.className = "unity-mobile";
@@ -118,7 +128,7 @@
               }).then((unityInstance) => {
                 document.querySelector("#unity-loading-bar").style.display = "none";
                 document.querySelector("#unity-fullscreen-button").onclick = () => {
-                  unityInstance.SetFullscreen(1);
+                  window.CubeGeniusPhone.enterFullscreen();
                 };
 
               }).catch((message) => {
@@ -129,5 +139,41 @@
       document.body.appendChild(script);
 
     </script>
-  </body>
+  <script>(function () {
+  'use strict';
+  var container=document.getElementById('unity-container'),canvas=document.getElementById('unity-canvas'),footer=document.getElementById('unity-footer');
+  var gate=document.createElement('div');gate.id='cube-genius-rotate';gate.hidden=true;
+  gate.setAttribute('role','alert');gate.setAttribute('aria-live','polite');
+  gate.innerHTML='<div class="rotate-symbol" aria-hidden="true">&#8635;</div><h1>Rotate your phone to play</h1><p>Cube Genius plays in landscape.</p>';
+  container.appendChild(gate);
+  var hints=navigator.userAgentData;
+  var phone=!!(hints&&hints.mobile)||/iPhone|iPod|Windows Phone|Android.*Mobile/i.test(navigator.userAgent);
+  // iPhone desktop-site requests can report a Mac platform. Do not gate normal desktops or iPads.
+  if(!phone&&navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1&&Math.min(screen.width,screen.height)<=600)phone=true;
+  var api=window.CubeGeniusPhone={blocked:false,isPhone:!!phone,enterFullscreen:function(){
+    var active=document.fullscreenElement||document.webkitFullscreenElement;
+    var fn=active?(document.exitFullscreen||document.webkitExitFullscreen):(container.requestFullscreen||container.webkitRequestFullscreen);
+    if(fn){var result=fn.call(active?document:container);if(result&&result.catch)result.catch(function(){});}
+  }};
+  canvas.width=1280;canvas.height=720;
+  function update(){
+    var w=window.innerWidth||document.documentElement.clientWidth,h=window.innerHeight||document.documentElement.clientHeight;
+    var blocked=!!phone&&h>w,changed=blocked!==api.blocked;api.blocked=blocked;gate.hidden=!blocked;
+    canvas.setAttribute('aria-hidden',blocked?'true':'false');
+    var css=window.getComputedStyle(container),left=parseFloat(css.paddingLeft)||0,right=parseFloat(css.paddingRight)||0,top=parseFloat(css.paddingTop)||0,bottom=parseFloat(css.paddingBottom)||0;
+    var width=Math.max(1,w-left-right),height=Math.max(1,h-top-bottom-38),scale=Math.min(width/1280,height/720);
+    var cw=1280*scale,ch=720*scale;
+    canvas.style.width=cw+'px';canvas.style.height=ch+'px';canvas.style.left=(left+(width-cw)/2)+'px';canvas.style.top=(top+(height-ch)/2)+'px';
+    footer.style.width=cw+'px';footer.style.left=(left+(width-cw)/2)+'px';footer.style.bottom=bottom+'px';
+    if(changed)window.dispatchEvent(new Event('cube-genius-orientation'));
+  }
+  function blockInput(event){if(api.blocked&&event.key!=='Escape'){event.preventDefault();event.stopImmediatePropagation();}}
+  ['pointerdown','pointerup','pointermove','mousedown','mouseup','mousemove','touchstart','touchmove','touchend','wheel','keydown','keyup'].forEach(function(type){window.addEventListener(type,blockInput,{capture:true,passive:false});});
+  ['resize','orientationchange','fullscreenchange','webkitfullscreenchange'].forEach(function(type){window.addEventListener(type,update);});
+  document.addEventListener('fullscreenchange',update);document.addEventListener('webkitfullscreenchange',update);
+  if(window.visualViewport)window.visualViewport.addEventListener('resize',update);
+  if(!(container.requestFullscreen||container.webkitRequestFullscreen))document.getElementById('unity-fullscreen-button').style.display='none';
+  update();
+})();
+</script></body>
 </html>
